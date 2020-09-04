@@ -42,11 +42,11 @@ The two files you will be editing are `test_echo.py` and `echo.py`. Don't worry 
 ├── screenshots
 │   └── result.gif
 ├── soln
+│   ├── __init__.py
 │   ├── .gitattributes
 │   ├── echo.py
 │   └── test_echo.py
 └── tests
-    ├── __init__.py
     └── test_echo.py
 ```
 
@@ -85,71 +85,47 @@ program should print the following usage message:
         -t, --title  convert text to titlecase
 
 
-This text is actually composed and printed by the `Argparse` module.  Argparse will assemble the various description and help messages that you have coded into your parser object, and print them all in a coherent "USAGE" message. The `test_echo.py` file also contains TWO helper methods that will allow you to capture the printed output of echo.py.  One of these methods launches a python program from an external process, the other method just uses the current process to intercept printed strings.  Can you tell which is which?
+This text is actually composed and printed by the `Argparse` module.  Argparse will assemble the various description and help messages that you have coded into your parser object, and print them all in a coherent "USAGE" message. The `test_echo.py` file also contains a helper method that will allow you to capture the printed output of `echo.py`, by running it as a subprocess.
 
-        ```python
-        # Students can use this function in their code
-        def run_capture(pyfile, args=()):
-            """
-            Runs a python program in a separate process,
-            returns stdout and stderr outputs as 2-tuple
-            """
-            cmd = ["python", pyfile]
-            cmd.extend(args)
-            p = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE
-                )
-            stdout, stderr = p.communicate()
-            stdout = stdout.decode().splitlines()
-            stderr = stderr.decode().splitlines()
-            assert stdout or stderr, "The program is not printing any output"
-            return stdout, stderr
-         ```
+```python
+# Students should use this function in their tests
+def run_capture(pyfile, args=()):
+    """
+    Runs a python program in a separate process,
+    returns the output lines as a list.
+    """
+    cmd = ["python", pyfile]
+    cmd.extend(args)
+    try:
+        result = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=True
+        )
+        output = result.stdout.decode()
+    except subprocess.CalledProcessError as err:
+        output = err.stdout.decode()
+    assert output, "Nothing was printed!"
+    return output.splitlines()
+```
 
-Here is the other way to capture printed output:
-
-        ```python
-        # This is a helper class for the main test class
-        # Students can use this class object in their code
-        class Capturing(list):
-            """Context Mgr helper for capturing stdout from a function call"""
-            def __enter__(self):
-                self._stdout = sys.stdout
-                sys.stdout = self._stringio = StringIO()
-                return self
-
-            def __exit__(self, *args):
-                self.extend(self._stringio.getvalue().splitlines())
-                del self._stringio    # free up some memory
-                sys.stdout = self._stdout
-        ```
-
-This code is provided for you inside the test_echo.py file.  Study these methods and understand how each of them work.  For this Help/Usage step, you will want to use the one that runs your program as a separate process. 
+This code is provided for you inside the `test_echo.py` file.  Study this function and understand how it works.
 
 ### Step 2: Test the `-u/--upper option`
-Write a unit test that asserts that `upper` gets stored inside of the
-namespace returned from `parser.parse_args()` when either `"-u"` or
-`"--upper"` arguments are given on the command line.
+Write a unit test that asserts that `upper` gets stored inside of the namespace returned from `parser.parse_args()` when either `"-u"` or `"--upper"` arguments are given on the command line.
 
-It should also test that `"hello"` gets turned into `"HELLO"` when the
-program is run.
+It should also test that `"hello"` gets turned into `"HELLO"` when the program is run.
 
 ### Step 3: Test the `-l/--lower option`
-Write a unit test that asserts that `lower` gets stored inside of the
-namespace returned from `parser.parse_args()` when either `"-l"` or
-`"--lower"` arguments are given on the command line.
+Write a unit test that asserts that `lower` gets stored inside of the namespace returned from `parser.parse_args()` when either `"-l"` or `"--lower"` arguments are given on the command line.
 
-It should also test that `"Hello"` gets turned into `"hello"` when the
-program is run.
+It should also test that `"Hello"` gets turned into `"hello"` when the program is run.
 
 ### Step 4: Test the `-t/--title option`
-Write a unit test that asserts that `title` gets stored inside of the
-namespace returned from `parser.parse_args()` when either `"-t"` or
-`"--title"` arguments are given on the command line.
+Write a unit test that asserts that `title` gets stored inside of the namespace returned from `parser.parse_args()` when either `"-t"` or `"--title"` arguments are given on the command line.
 
-It should also test that `"hello"` gets turned into `"Hello"` when the
-program is run.
+It should also test that `"hello"` gets turned into `"Hello"` when the program is run.
 
 ### Step 6: Test for when all option flags are provided
 When a user provides all three option flags (-lut), they should be **applied in the order listed in the helpful usage message** that Argparse constructs from the argument definitions. Here are a few examples:
@@ -167,8 +143,7 @@ hello!
 Note that the order that the options are provided doesn't matter, e.g. '-tul' and '-utl' and '-lut' are **all equivalent inputs to Argparse**.  Only the final text transform result should be printed.
 
 ### Step 7: Test for no options flags
-Write a unit test that asserts that when no options flags are given, the program
-prints the unaltered input text.
+Write a unit test that asserts that when no options flags are given, the program prints the unaltered input text.
 
 ### Step 8: Implement echo.py
 This step can be done in several ways.  
@@ -178,17 +153,8 @@ This step can be done in several ways.
 ## Structuring your echo.py application
 Remember to separate functionality in your echo.py application.  Notice that many of the tests above are checking to see if the argument parser has done its job correctly by parsing out an option from the command line, and making it available in parser output (the Namespace, or parsed args dict).  
 Therefore, it makes sense to have a function in echo.py whose sole purpose is to deliver back a parser object, that can be stored in your TestEcho class and invoked by calling its parse_args() method with various argument lists.  Such a function might be named `create_parser()`.
+
 You may also benefit from having a separate `main()` function in your echo.py appliction.  A main() function can be invoked from the command line directly as part of the application, but it can also be _directly imported_ by your test program so you can test it all different ways.  The starter code for these two functions is provided in echo.py.
 
-## Submitting Your Work
-Use the `PR Workflow` process to submit your work.  This process is detailed in your course materials.
-
-
-## PR (Pull Request) Workflow for this Assignment
-1. *Fork* this repository into your own personal github account.
-2. Then *Clone* your own repo to your local development machine.
-3. Create a separate branch named `dev`, and checkout the branch.
-5. Commit your changes, then `git push` the branch back to your own github account.
-5. From your own Github repo, create a pull request (PR) from your `dev` branch back to your own master.
-6. Copy/Paste the URL **link to your PR** as your assignment submission.
-7. Your grader will post code review comments inline with your code, in your github account. Be sure to respond to any comments and make requested changes. **RESUBMIT** a new link to your PR after making changes.  This is the code review iteration cycle.
+## Submitting your work
+To submit your solution for grading, you will need to create a github [Pull Request (PR)](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/about-pull-requests).  Refer to the `PR Workflow` article in your course content for details.
