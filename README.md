@@ -158,3 +158,10 @@ You may also benefit from having a separate `main()` function in your echo.py ap
 
 ## Submitting your work
 To submit your solution for grading, you will need to create a github [Pull Request (PR)](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/about-pull-requests).  Refer to the `PR Workflow` article in your course content for details.
+
+## Assignment FAQ
+- _"Q: How do I write tests for the namespace?"_  A: A `Namespace` is the return value type that you get when you call `parser.parse_args()`. You want to write tests that verify if the parser is doing its job of converting an argument list into a Namespace:
+  - Is an instance of a `Parser` object type actually returned after calling the test module's `create_parser` function?
+  - After running parser.parse_args(), does the returned Namespace contain the attributes you expected?
+  - Does it contain extra attributes you were not expecting?
+  - What are the values contained in the attributes?  Are they correct and expected, according to the argument list you provided as input?
